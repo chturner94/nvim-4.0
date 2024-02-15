@@ -1,10 +1,42 @@
 local Util = require('utils')
 return {
     {
+        'akinsho/toggleterm.nvim',
+        version = "*",
+        opts = {
+            open_mapping = [[<C-/>]],
+        },
+        config = function(_, opts)
+            require('toggleterm').setup(opts)
+        end
+    },
+    {
+        'kdheepak/lazygit.nvim',
+        dependencies = {
+            'nvim-lua/plenary.nvim',
+        },
+        keys = {
+            { '<leader>gg', '<cmd>LazyGit<cr>', desc = 'Lazy Git' },
+        }
+    },
+    {
+        'willothy/wezterm.nvim',
+        event = "VeryLazy",
+        enabled = true,
+        cond = function()
+            return vim.fn.executable('wezterm') ~= 0
+        end,
+        config = function()
+            local w = require('wezterm')
+            w.setup({})
+
+        end,
+    },
+    {
         'nvim-neo-tree/neo-tree.nvim',
         branch = 'v3.x',
         cmd = 'Neotree',
-        dependencies = { 
+        dependencies = {
             'nvim-lua/plenary.nvim',
             'nvim-tree/nvim-web-devicons',
             'MunifTanjim/nui.nvim',
@@ -240,29 +272,30 @@ return {
     {
         'mbbill/undotree'
     },
-          {
-            "echasnovski/mini.bufremove",
-            keys = {
-                {
-                    "<leader>bd",
-                    function()
-                        local bd = require("mini.bufremove").delete
-                        if vim.bo.modified then
-                        local choice = vim.fn.confirm(("Save changes to %q?"):format(vim.fn.bufname()), "&Yes\n&No\n&Cancel")
+    {
+        "echasnovski/mini.bufremove",
+        keys = {
+            {
+                "<leader>bd",
+                function()
+                    local bd = require("mini.bufremove").delete
+                    if vim.bo.modified then
+                        local choice = vim.fn.confirm(("Save changes to %q?"):format(vim.fn.bufname()),
+                            "&Yes\n&No\n&Cancel")
                         if choice == 1 then -- Yes
                             vim.cmd.write()
                             bd(0)
-                            elseif choice == 2 then -- No
-                                bd(0, true)
-                            end
-                            else
-                                bd(0)
+                        elseif choice == 2 then -- No
+                            bd(0, true)
                         end
-                    end,
-                    desc = "Delete Buffer",
-                },
-                -- stylua: ignore
-                { "<leader>bD", function() require("mini.bufremove").delete(0, true) end, desc = "Delete Buffer (Force)" },
+                    else
+                        bd(0)
+                    end
+                end,
+                desc = "Delete Buffer",
             },
+            -- stylua: ignore
+            { "<leader>bD", function() require("mini.bufremove").delete(0, true) end, desc = "Delete Buffer (Force)" },
         },
+    },
 }
