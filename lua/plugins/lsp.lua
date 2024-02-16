@@ -3,9 +3,15 @@ return {
         'VonHeikemen/lsp-zero.nvim',
         branch = 'v3.x',
         lazy = true,
+        dependencies = {
+            {
+                'lvimuser/lsp-inlayhints.nvim'
+            },
+        },
         opts = {},
         config = function(_, opts)
             local lsp_zero = require('lsp-zero')
+            local ih = require('lsp-inlayhints')
             lsp_zero.extend_lspconfig()
 
             lsp_zero.on_attach(function(client, bufnr)
@@ -24,13 +30,18 @@ return {
                 })
                 lsp_zero.buffer_autoformat()
             end)
+            require('lspconfig').lua_ls.setup({
+                on_attach = function(client, bufnr)
+                    ih.on_attach(client, bufnr)
+                end,
+            })
         end,
         keys = {
-            { '<leader>cf', '<cmd>LspZeroFormat<cr>', desc = 'Format file' },
-            { 'gD', '<cmd>lua vim.lsp.buf.declaration()<cr>', desc = 'Go to declaration' },
-            { 'gi', '<cmd>lua vim.lsp.buf.implementation()<cr>', desc = 'Go to implementation' },
-            { 'gr', '<cmd>lua vim.lsp.buf.references()<cr>', desc = 'Go to references' },
-            { 'gK', '<cmd>lua vim.lsp.buf.signature_help()<cr>', desc = 'Signature help' },
+            { '<leader>cf', '<cmd>LspZeroFormat<cr>',                    desc = 'Format file' },
+            { 'gD',         '<cmd>lua vim.lsp.buf.declaration()<cr>',    desc = 'Go to declaration' },
+            { 'gi',         '<cmd>lua vim.lsp.buf.implementation()<cr>', desc = 'Go to implementation' },
+            { 'gr',         '<cmd>lua vim.lsp.buf.references()<cr>',     desc = 'Go to references' },
+            { 'gK',         '<cmd>lua vim.lsp.buf.signature_help()<cr>', desc = 'Signature help' },
 
         }
     },
@@ -125,6 +136,7 @@ return {
             ensure_installed = {
                 'stylua',
                 'shfmt',
+                'lua_ls'
             },
         },
         config = function(_, opts)
