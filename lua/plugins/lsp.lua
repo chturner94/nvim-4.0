@@ -1,3 +1,4 @@
+local Utilities = require('utils')
 return {
     {
         'VonHeikemen/lsp-zero.nvim',
@@ -158,7 +159,8 @@ return {
                     -- lua
                     lua_ls = function()
                         require('neodev').setup()
-                        local neodev_config = {
+                        local lspconfig = require('lspconfig')
+                        local neodevOptions = {
                             settings = {
                                 Lua = {
                                     completion = {
@@ -167,10 +169,7 @@ return {
                                 }
                             }
                         }
-                        local lua_opts = lsp_zero.nvim_lua_ls()
-                        for k, v in pairs(neodev_config) do
-                            lua_opts[k] = require('lspconfig').lua_ls.setup(v)
-                        end
+                        lspconfig.lua_ls.setup(neodevOptions)
                     end,
                     -- tsserver
                     tsserver = function()

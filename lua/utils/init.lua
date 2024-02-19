@@ -29,6 +29,17 @@ function M.listRoot()
     return vim.cmd('LspZeroWorkspaceList')
 end
 
+---@class MergeTables
+---@param primaryTable table - this is the table we are going to merge onto (this will be be at risk for being overwritten)
+---@param writingTable table - this is the table we are going to overwrite the primaryTable with.
+---@return table
+function M.mergeTables(primaryTable, writingTable)
+    for key, value in pairs(writingTable) do
+        primaryTable[key] = value
+    end
+    return primaryTable
+end
+
 ---@param name string
 ---@param fn fun(name:string)
 function M.on_load(name, fn)
@@ -53,6 +64,5 @@ function M.on_load(name, fn)
         })
     end
 end
-
 
 return M
