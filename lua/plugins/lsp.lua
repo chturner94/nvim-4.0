@@ -11,7 +11,6 @@ return {
         opts = {},
         config = function(_, opts)
             local lsp_zero = require('lsp-zero')
-            local ih = require('lsp-inlayhints')
             lsp_zero.extend_lspconfig()
 
             lsp_zero.on_attach(function(client, bufnr)
@@ -30,11 +29,6 @@ return {
                 })
                 lsp_zero.buffer_autoformat()
             end)
-            require('lspconfig').lua_ls.setup({
-                on_attach = function(client, bufnr)
-                    ih.on_attach(client, bufnr)
-                end,
-            })
         end,
         keys = {
             { '<leader>cf', '<cmd>LspZeroFormat<cr>',                    desc = 'Format file' },
@@ -95,11 +89,11 @@ return {
                 ['<C-Space>'] = cmp.mapping.complete(),
 
                 -- Navigate between snippet placeholder
-                ['<Tab>'] = cmp_action.luasnip_jump_forward(),
-                ['<S-Tab>'] = cmp_action.luasnip_jump_backward(),
+                ['<Tab>'] = cmp_action.luasnip_supertab(),
+                ['<S-Tab>'] = cmp_action.luasnip_shift_supertab(),
 
                 -- Scoll up and down in the completion documentation
-                ['<C-u>'] = cmp.mapping.scroll_docs(-4),
+                ['<C-u>'] = cmp.mapping.scroll_docs(4),
                 ['<C-d>'] = cmp.mapping.scroll_docs(-4),
             })
             cmp.setup(opts)
@@ -136,7 +130,13 @@ return {
             ensure_installed = {
                 'stylua',
                 'shfmt',
-                'lua_ls'
+                'lua_ls',
+                'tsserver',
+                'gopls',
+                'marksman',
+                'svelte-language-server',
+                'gopls',
+
             },
         },
         config = function(_, opts)
@@ -145,11 +145,150 @@ return {
     },
     {
         'williamboman/mason-lspconfig.nvim',
+        dependencies = {
+            {
+                'folke/neodev.nvim',
+            }
+        },
         config = function()
             local lsp_zero = require('lsp-zero')
             require('mason-lspconfig').setup({
                 handlers = {
                     lsp_zero.default_setup,
+                    -- lua
+                    lua_ls = function()
+                        require('neodev').setup()
+                        local neodev_config = {
+                            settings = {
+                                Lua = {
+                                    completion = {
+                                        callSnippet = 'Replace'
+                                    }
+                                }
+                            }
+                        }
+                        local lua_opts = lsp_zero.nvim_lua_ls()
+                        for k, v in pairs(neodev_config) do
+                            lua_opts[k] = require('lspconfig').lua_ls.setup(v)
+                        end
+                    end,
+                    -- tsserver
+                    tsserver = function()
+                        require('lspconfig').tsserver.setup({
+                            on_attach = function(client, bufnr)
+                                local wk = require('which-key')
+                                local ih = require('lsp-inlayhints')
+                                ih.setup()
+                                ih.on_attach(client, bufnr)
+                                wk.register({
+                                    ['<leader>cR'] = {
+                                        vim.lsp.buf.code_action({
+                                            apply = true,
+                                            context = {
+                                                only = { 'source.removeUnused.ts' },
+                                                diagnostics = {},
+                                            }
+                                        }),
+                                        'Remove unused imports'
+                                    },
+                                })
+                            end,
+                            settings = {
+                                typescript = {
+                                    inlayHints = {
+                                        includeInlayParameterNameHints = "all", -- 'none' | 'literals' | 'all'
+                                        includeInlayParameterNameHintsWhenArgumentMatchesName = true,
+                                        includeInlayVariableTypeHints = true,
+                                        includeInlayFunctionParameterTypeHints = true,
+                                        includeInlayVariableTypeHintsWhenTypeMatchesName = true,
+                                        includeInlayPropertyDeclarationTypeHints = true,
+                                        includeInlayFunctionLikeReturnTypeHints = true,
+                                        includeInlayEnumMemberValueHints = true,
+                                    },
+                                },
+                                javascript = {
+                                    inlayHints = {
+                                        includeInlayParameterNameHints = "all", -- 'none' | 'literals' | 'all'
+                                        includeInlayParameterNameHintsWhenArgumentMatchesName = true,
+                                        includeInlayVariableTypeHints = true,
+
+                                        includeInlayFunctionParameterTypeHints = true,
+                                        includeInlayVariableTypeHintsWhenTypeMatchesName = true,
+                                        includeInlayPropertyDeclarationTypeHints = true,
+                                        includeInlayFunctionLikeReturnTypeHints = true,
+                                        includeInlayEnumMemberValueHints = true,
+                                    }
+                                }
+                            },
+                        })
+                    end,
+                    -- gopls
+                    gopls = function()
+                        require('lspconfig').gopls.setup({
+                            on_attach = function(client, bufnr)
+                                local wk = require('which-key')
+                                local ih = require('lsp-inlayhints')
+                                if client.name == 'gopls' and not client.server_capabilities.semanticTokensProvider then
+                                    local semantic = client.config.capabilities.textDocument.semanticTokens
+                                    client.server_capabilities.semanticTokensProvider = {
+                                        full = true,
+                                        legend = { tokenModifiers = semantic.tokenModifiers, tokenTypes = semantic.tokenTypes },
+                                        range = true,
+                                    }
+                                end
+                                ih.setup()
+                                ih.on_attach(client, bufnr)
+                                wk.register({
+
+                                })
+                            end,
+                            settings = {
+                                gopls = {
+                                    gofumpt = true,
+                                    codelenses = {
+                                        gc_details = true,
+                                        generate = true,
+                                        regenerate_cgo = true,
+                                        run_govulncheck = true,
+                                        test = true,
+                                        tidy = true,
+                                        upgrade_dependency = true,
+                                        vendor = true,
+                                    },
+                                    hints = {
+                                        assignVariableTypes = true,
+                                        compositeLiteralFields = true,
+                                        compositeLiteralTypes = true,
+                                        constantValues = true,
+                                        functionTypeParameters = true,
+                                        parameterNames = true,
+                                        rangeVariableTypes = true,
+                                    },
+                                    analyses = {
+                                        fieldalignment = true,
+                                        nilness = true,
+                                        unusedparams = true,
+                                        unusedwrite = true,
+                                        useany = true,
+                                    },
+                                    usePlaceholders = true,
+                                    completeUnimported = true,
+                                    staticcheck = true,
+                                    directoryFilters = { "-.git", "-.vscode", "-.idea", "-.vscode-test", "-node_modules" },
+                                    semanticTokens = true,
+                                }
+                            }
+                        })
+                    end,
+                    -- new servers go here
+                    -- server_name = function()
+                    --  require('lspconfig').server_name.setup({
+                    --  config here
+                    --  on_attach = function(client, bufnr) -- can be used like this
+                    --          print('hello and other methods')
+                    --  end
+                    --  })
+
                 },
             })
         end
